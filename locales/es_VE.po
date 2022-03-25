@@ -2,6 +2,7 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+<<<<<<< HEAD
 # 
 # Translators:
 # Francisco Bolivar, 2022
@@ -15,11 +16,30 @@ msgstr ""
 "PO-Revision-Date: 2021-08-30 07:22+0000\n"
 "Last-Translator: Francisco Bolivar, 2022\n"
 "Language-Team: Spanish (Venezuela) (https://www.transifex.com/teclib/teams/28042/es_VE/)\n"
+=======
+#
+# Translators:
+# Francisco Bolivar, 2022
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-01-10 12:08+0100\n"
+"PO-Revision-Date: 2022-03-23 13:19-0400\n"
+"Last-Translator: Francisco Bolivar, 2022\n"
+"Language-Team: Spanish (Venezuela) (https://www.transifex.com/teclib/"
+"teams/28042/es_VE/)\n"
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: es_VE\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+<<<<<<< HEAD
+=======
+"X-Generator: Poedit 2.3\n"
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 
 #: ajax/question_update.php:36
 msgid "Bad request"
@@ -269,9 +289,14 @@ msgid ""
 "To respect the GLPI entity system, \"Form\" should be selected. Others "
 "settings will break the entity restrictions"
 msgstr ""
+<<<<<<< HEAD
 "Para respetar el sistema de entidades GLPI, se debe seleccionar "
 "\"Formulario\". Otras configuraciones romperán las restricciones de la "
 "entidad"
+=======
+"Para respetar el sistema de entidades GLPI, se debe seleccionar \"Formulario"
+"\". Otras configuraciones romperán las restricciones de la entidad"
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 
 #: inc/field/ldapselectfield.class.php:49
 msgid "LDAP directory"
@@ -1105,8 +1130,13 @@ msgid ""
 "Failed to add or update the %1$s %2$s: a question is missing and is used in "
 "a parameter of the target"
 msgstr ""
+<<<<<<< HEAD
 "No se pudo agregar o actualizar %1$s %2$s: falta una pregunta y se usa en un"
 " parámetro del objetivo"
+=======
+"No se pudo agregar o actualizar %1$s %2$s: falta una pregunta y se usa en "
+"un parámetro del objetivo"
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 
 #: inc/targetproblem.class.php:590 inc/targetchange.class.php:105
 #: inc/abstracttarget.class.php:1423 inc/targetticket.class.php:125
@@ -1274,8 +1304,13 @@ msgstr "Página principal"
 msgid "Access"
 msgstr "Acceso"
 
+<<<<<<< HEAD
 #: inc/form.class.php:246 inc/form.class.php:314 inc/form.class.php:372 entrée
 #: standard:53
+=======
+#: inc/form.class.php:246 inc/form.class.php:314 inc/form.class.php:372
+#: entrée standard:53
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 msgid "Active"
 msgstr "Activo"
 
@@ -1444,8 +1479,13 @@ msgid ""
 "The file does not specifies the schema version. It was probably generated "
 "with a version older than 2.10. Giving up."
 msgstr ""
+<<<<<<< HEAD
 "El archivo no especifica la versión del esquema. Probablemente se generó con"
 " una versión anterior a la 2.10. Abandonar."
+=======
+"El archivo no especifica la versión del esquema. Probablemente se generó "
+"con una versión anterior a la 2.10. Abandonar."
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 
 #: inc/form.class.php:1668
 #, php-format
@@ -1532,7 +1572,11 @@ msgid "Check list"
 msgstr "Lista de Verificación"
 
 #: inc/section.class.php:71 inc/question.class.php:796 entrée standard:63
+<<<<<<< HEAD
 #: entrée standard:44
+=======
+#: standard:44
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 msgid "Section"
 msgid_plural "Sections"
 msgstr[0] "Sección"
@@ -2037,11 +2081,19 @@ msgstr "Habilitar captcha"
 
 #: install/install.php:127
 msgid ""
+<<<<<<< HEAD
 "Upgrade tables to innoDB; run php bin/console "
 "glpi:migration:myisam_to_innodb"
 msgstr ""
 "Actualizar tablas a innoDB; ejecute php bin/console "
 "glpi:migration:myisam_to_innodb"
+=======
+"Upgrade tables to innoDB; run php bin/console glpi:migration:"
+"myisam_to_innodb"
+msgstr ""
+"Actualizar tablas a innoDB; ejecute php bin/console glpi:migration:"
+"myisam_to_innodb"
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 
 #: install/install.php:311
 msgid "A form has been created"
@@ -2059,8 +2111,13 @@ msgid ""
 msgstr ""
 "Hola,\\nTu solicitud desde GLPI haber sido guardada con éxito con el número "
 "##formcreator.request_id## y transmitida al equipo de asistencia.\\nTu "
+<<<<<<< HEAD
 "puedes ver sus respuestas en el siguiente "
 "enlace:\\n##formcreator.validation_link##"
+=======
+"puedes ver sus respuestas en el siguiente enlace:\\n##formcreator."
+"validation_link##"
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 
 #: install/install.php:318
 msgid "A form from GLPI need to be validate"
@@ -2069,8 +2126,13 @@ msgstr "Un formulario GLPI necesita ser validado"
 #: install/install.php:319
 msgid ""
 "Hi,\\nA form from GLPI need to be validate and you have been choosen as the "
+<<<<<<< HEAD
 "validator.\\nYou can access it by clicking onto this "
 "link:\\n##formcreator.validation_link##"
+=======
+"validator.\\nYou can access it by clicking onto this link:\\n##formcreator."
+"validation_link##"
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 msgstr ""
 "Hola,\\n Un formulario desde GLPI necesita ser validado y usted ha sido "
 "elegido como el validador.\\nUsted puede acceder a él haciendo clic en este "
@@ -2083,6 +2145,7 @@ msgstr "Su formulario ha sido rechazado por el validador"
 #: install/install.php:325
 msgid ""
 "Hi,\\nWe are sorry to inform you that your form has been refused by the "
+<<<<<<< HEAD
 "validator for the reason "
 "below:\\n##formcreator.validation_comment##\\n\\nYou can still modify and "
 "resubmit it by clicking onto this link:\\n##formcreator.validation_link##"
@@ -2092,14 +2155,29 @@ msgstr ""
 "continuación:\\n##formcreator.validation_comment##\\n\\nUsted puede todavía "
 "modificarlo y volver a enviarlo haciendo clic en este "
 "enlace:\\n##formcreator.validation_link##"
+=======
+"validator for the reason below:\\n##formcreator.validation_comment##\\n"
+"\\nYou can still modify and resubmit it by clicking onto this link:"
+"\\n##formcreator.validation_link##"
+msgstr ""
+"Hola,\\nSentimos informarle que su formulario ha sido rechazado por el "
+"validador por el motivo a continuación:\\n##formcreator.validation_comment##"
+"\\n\\nUsted puede todavía modificarlo y volver a enviarlo haciendo clic en "
+"este enlace:\\n##formcreator.validation_link##"
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 
 #: install/install.php:331
 msgid ""
 "Hi,\\nWe are pleased to inform you that your form has been accepted by the "
 "validator.\\nYour request will be considered soon."
 msgstr ""
+<<<<<<< HEAD
 "Hola,\\nNos complace informarle de que su formulario ha sido aceptado por el"
 " validador.\\n Su solicitud será considerada pronto."
+=======
+"Hola,\\nNos complace informarle de que su formulario ha sido aceptado por "
+"el validador.\\n Su solicitud será considerada pronto."
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 
 #: install/install.php:336
 msgid "Your form has been deleted by an administrator"
@@ -2157,11 +2235,19 @@ msgstr "esperando asuntos"
 
 #: hook.php:632
 msgid "issues to validate"
+<<<<<<< HEAD
 msgstr "Asuntos para validar"
 
 #: hook.php:633
 msgid "solved issues"
 msgstr "Asuntos resueltos"
+=======
+msgstr "asuntos para validar"
+
+#: hook.php:633
+msgid "solved issues"
+msgstr "asuntos resueltos"
+>>>>>>> f48a1e18cc196039b86fc3610469f5d16ed70653
 
 #: hook.php:640
 #, php-format
