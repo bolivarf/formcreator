@@ -527,9 +527,9 @@ PluginFormcreatorTranslatableInterface
    /**
     * Update size or position of the question
     * @param array $input
-    * @return boolean false on error
+    * @return bool false on error
     */
-   public function change($input) {
+   public function change($input): bool {
       $x = $this->fields['col'];
       $y = $this->fields['row'];
       $width = $this->fields['width'];
@@ -610,16 +610,17 @@ PluginFormcreatorTranslatableInterface
     * set or reset the required flag
     *
     * @param bool $isRequired
+    * @return bool true if success, false otherwise
     */
-   public function setRequired($isRequired) {
+   public function setRequired($isRequired): bool {
       $this->skipChecks = true;
-      $sucess = $this->update([
+      $success = $this->update([
          'id'           => $this->getID(),
          'required'     => $isRequired,
       ]);
       $this->skipChecks = false;
 
-      return $sucess;
+      return $success;
    }
 
    /**
@@ -689,20 +690,16 @@ PluginFormcreatorTranslatableInterface
       if ($section->isRowEmpty($this->fields['row'])) {
          // Rows of the item are empty
          $row = $this->fields['row'];
-         $sectionId = $this->fields[$sectionFk];
-         $DB->query("
-            UPDATE `$table`
-            SET `row` = `row` - 1
-            WHERE `row` > '$row' AND `$sectionFk` = '$sectionId'
-         ");
-         // $DB->update(
-         //    $table,
-         //    new QueryExpression("`row` = `row` - 1"),
-         //   [
-         //      'row' => ['>', $row],
-         //      $sectionFk => $this->fields[$sectionFk]
-         //   ]
-         // );
+         $DB->update(
+            $table,
+            [
+               'row' => new QueryExpression('`row` - 1')
+            ],
+            [
+              'row' => ['>', $row],
+              $sectionFk => $this->fields[$sectionFk]
+            ]
+         );
       }
 
       // Always show questions with conditional display on the question being deleted
