@@ -261,10 +261,8 @@ PluginFormcreatorTranslatableInterface
     * @param boolean $canEdit Can the requester edit the field of the question ?
     * @param array   $value   Values all fields of the form
     * @param bool $isVisible is the question visible by default ?
-    *
-    * @return string
     */
-   public function getRenderedHtml($domain, $canEdit = true, $value = [], $isVisible = true): string {
+   public function getRenderedHtml($domain, $canEdit = true, $value = [], $isVisible = true) : string {
       if ($this->isNewItem()) {
          return '';
       }
@@ -527,9 +525,9 @@ PluginFormcreatorTranslatableInterface
    /**
     * Update size or position of the question
     * @param array $input
-    * @return bool false on error
+    * @return boolean false on error
     */
-   public function change($input): bool {
+   public function change($input) {
       $x = $this->fields['col'];
       $y = $this->fields['row'];
       $width = $this->fields['width'];
@@ -610,17 +608,16 @@ PluginFormcreatorTranslatableInterface
     * set or reset the required flag
     *
     * @param bool $isRequired
-    * @return bool true if success, false otherwise
     */
-   public function setRequired($isRequired): bool {
+   public function setRequired($isRequired) {
       $this->skipChecks = true;
-      $success = $this->update([
+      $sucess = $this->update([
          'id'           => $this->getID(),
          'required'     => $isRequired,
       ]);
       $this->skipChecks = false;
 
-      return $success;
+      return $sucess;
    }
 
    /**
@@ -690,16 +687,20 @@ PluginFormcreatorTranslatableInterface
       if ($section->isRowEmpty($this->fields['row'])) {
          // Rows of the item are empty
          $row = $this->fields['row'];
-         $DB->update(
-            $table,
-            [
-               'row' => new QueryExpression('`row` - 1')
-            ],
-            [
-              'row' => ['>', $row],
-              $sectionFk => $this->fields[$sectionFk]
-            ]
-         );
+         $sectionId = $this->fields[$sectionFk];
+         $DB->query("
+            UPDATE `$table`
+            SET `row` = `row` - 1
+            WHERE `row` > '$row' AND `$sectionFk` = '$sectionId'
+         ");
+         // $DB->update(
+         //    $table,
+         //    new QueryExpression("`row` = `row` - 1"),
+         //   [
+         //      'row' => ['>', $row],
+         //      $sectionFk => $this->fields[$sectionFk]
+         //   ]
+         // );
       }
 
       // Always show questions with conditional display on the question being deleted

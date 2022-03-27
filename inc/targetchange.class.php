@@ -741,8 +741,4 @@ class PluginFormcreatorTargetChange extends PluginFormcreatorAbstractItilTarget
 
       return $change;
    }
-
-   public static function getIcon() {
-      return Change::getIcon();
-   }
 }
