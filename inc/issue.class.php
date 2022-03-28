@@ -162,8 +162,8 @@ class PluginFormcreatorIssue extends CommonDBTM {
                'entities_id                              as entities_id'
             ],
             new QueryExpression('0                       as is_recursive'),
-            new QueryExpression("COALESCE($ticketUserTable.users_id, 0) as requester_id"),
-            new QueryExpression("IF(`$ticketValidationTable`.`users_id_validate` IS NULL, 0, `$ticketValidationTable`.`users_id_validate`)  as users_id_validator"),
+            new QueryExpression("COALESCE(`$ticketUserTable`.`users_id`, 0) as `requester_id`"),
+            new QueryExpression("COALESCE(`$ticketValidationTable`.`users_id_validate`, 0) as `users_id_validator`"),
             new QueryExpression('0                       as groups_id_validator'),
             "$ticketTable.content                        as comment",
             'users_id_recipient                          as users_id_recipient'
@@ -182,18 +182,15 @@ class PluginFormcreatorIssue extends CommonDBTM {
             ],
             [
                'TABLE' => new QuerySubQuery([
-                  'SELECT' => '*',
-                  'FROM' => new QuerySubQuery([
-                     'SELECT' => ['users_id', $ticketFk],
-                     'DISTINCT' => true,
-                     'FROM'  => $ticketUserTable,
-                     'WHERE' => [
-                        'type' => CommonITILActor::REQUESTER,
-                     ],
-                     'ORDER' => ['id ASC'],
-                  ], 'inner_glpi_tickets_users'),
-                  'GROUPBY' => 'tickets_id'
-               ], 'glpi_tickets_users'),
+                  'SELECT' => ['users_id', $ticketFk],
+                  'DISTINCT' => true,
+                  'FROM'  => $ticketUserTable,
+                  'WHERE' => [
+                     'type' => CommonITILActor::REQUESTER,
+                  ],
+                  'GROUPBY' => 'tickets_id',
+                  'ORDER' => ['id ASC']
+               ], $ticketUserTable),
                'FKEY' => [
                   $ticketTable => 'id',
                   $ticketUserTable => $ticketFk,
