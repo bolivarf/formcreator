@@ -259,31 +259,24 @@ PluginFormcreatorTranslatableInterface
     * Get the HTML to display the question for a requester
     * @param string  $domain  Translation domain of the form
     * @param boolean $canEdit Can the requester edit the field of the question ?
-    * @param array   $value   Values all fields of the form
+    * @param PluginFormcreatorFormAnswer $value   Values all fields of the form
     * @param bool $isVisible is the question visible by default ?
+    *
+    * @return string
     */
-   public function getRenderedHtml($domain, $canEdit = true, $value = [], $isVisible = true) : string {
+   public function getRenderedHtml($domain, $canEdit = true, ?PluginFormcreatorFormAnswer $form_answer = null, $isVisible = true): string {
       if ($this->isNewItem()) {
          return '';
       }
 
       $html = '';
 
-      $field = PluginFormcreatorFields::getFieldInstance(
-         $this->fields['fieldtype'],
-         $this
-      );
+      $field = $this->getSubField();
       if (!$field->isPrerequisites()) {
          return '';
       }
 
-      if ($field->hasInput($value)) {
-         // Parse an HTML input
-         $field->parseAnswerValues($value);
-      } else {
-         // Deserialize the default value from DB
-         $field->deserializeValue($this->fields['default_values']);
-      }
+      $field->setFormAnswer($form_answer);
 
       $required = ($this->fields['required']) ? ' required' : '';
       $x = $this->fields['col'];
@@ -525,9 +518,9 @@ PluginFormcreatorTranslatableInterface
    /**
     * Update size or position of the question
     * @param array $input
-    * @return boolean false on error
+    * @return bool false on error
     */
-   public function change($input) {
+   public function change($input): bool {
       $x = $this->fields['col'];
       $y = $this->fields['row'];
       $width = $this->fields['width'];
@@ -608,16 +601,17 @@ PluginFormcreatorTranslatableInterface
     * set or reset the required flag
     *
     * @param bool $isRequired
+    * @return bool true if success, false otherwise
     */
-   public function setRequired($isRequired) {
+   public function setRequired($isRequired): bool {
       $this->skipChecks = true;
-      $sucess = $this->update([
+      $success = $this->update([
          'id'           => $this->getID(),
          'required'     => $isRequired,
       ]);
       $this->skipChecks = false;
 
-      return $sucess;
+      return $success;
    }
 
    /**
@@ -687,20 +681,16 @@ PluginFormcreatorTranslatableInterface
       if ($section->isRowEmpty($this->fields['row'])) {
          // Rows of the item are empty
          $row = $this->fields['row'];
-         $sectionId = $this->fields[$sectionFk];
-         $DB->query("
-            UPDATE `$table`
-            SET `row` = `row` - 1
-            WHERE `row` > '$row' AND `$sectionFk` = '$sectionId'
-         ");
-         // $DB->update(
-         //    $table,
-         //    new QueryExpression("`row` = `row` - 1"),
-         //   [
-         //      'row' => ['>', $row],
-         //      $sectionFk => $this->fields[$sectionFk]
-         //   ]
-         // );
+         $DB->update(
+            $table,
+            [
+               'row' => new QueryExpression('`row` - 1')
+            ],
+            [
+              'row' => ['>', $row],
+              $sectionFk => $this->fields[$sectionFk]
+            ]
+         );
       }
 
       // Always show questions with conditional display on the question being deleted
@@ -1151,10 +1141,7 @@ PluginFormcreatorTranslatableInterface
                $question->getFromDB($key);
 
                /** @var PluginFormcreatorDropdownField */
-               $field = PluginFormcreatorFields::getFieldInstance(
-                  $question['fieldtype'],
-                  $question
-               );
+               $field = $question->getSubField();
 
                $decodedValues = json_decode($question->fields['values'], JSON_OBJECT_AS_ARRAY);
                if ($decodedValues === null) {
