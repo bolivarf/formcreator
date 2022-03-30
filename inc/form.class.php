@@ -288,6 +288,20 @@ PluginFormcreatorTranslatableInterface
          'massiveaction'      => true
       ];
 
+      $tab[] = [
+         'id'                 => '35',
+         'table'              => $this::getTable(),
+         'field'              => 'is_default',
+         'datatype'           => 'specific',
+         'searchtype'         => [
+            '0'                  => 'equals',
+            '1'                  => 'notequals'
+         ],
+         'name'               => __('Default form', 'formcreator'),
+         'searchtype'         => ['equals'],
+         'massiveaction'      => true
+      ];
+
       return $tab;
    }
 
@@ -314,6 +328,17 @@ PluginFormcreatorTranslatableInterface
             return Dropdown::showFromArray($name, [
                '0' => __('Inactive'),
                '1' => __('Active'),
+            ], [
+               'value'               => $values[$field],
+               'display_emptychoice' => false,
+               'display'             => false
+            ]);
+            break;
+
+         case 'is_default' :
+            return Dropdown::showFromArray($name, [
+               '0' => __('Not default form'),
+               '1' => __('Default form'),
             ], [
                'value'               => $values[$field],
                'display_emptychoice' => false,
@@ -376,6 +401,25 @@ PluginFormcreatorTranslatableInterface
                . $class
                . '" aria-hidden="true" title="' . $title . '"></i>';
                $output = '<div style="text-align: center" onclick="plugin_formcreator.toggleForm(' . $options['raw_data']['id']. ')">' . $output . '</div>';
+            } else {
+               $output = $title;
+            }
+            return $output;
+            break;
+
+         case 'is_default':
+            if ($values[$field] == 0) {
+               $class = "plugin-formcreator-inactive";
+               $title =  __('Not default form', 'formcreator');
+            } else {
+               $class = "plugin-formcreator-active";
+               $title =  __('Default form', 'formcreator');
+            }
+            if (isset($options['raw_data']['id'])) {
+               $output = '<i class="fa fa-circle '
+               . $class
+               . '" aria-hidden="true" title="' . $title . '"></i>';
+               $output = '<div style="text-align: center" onclick="plugin_formcreator.toggleDefaultForm(' . $options['raw_data']['id']. ')">' . $output . '</div>';
             } else {
                $output = $title;
             }
@@ -644,7 +688,6 @@ PluginFormcreatorTranslatableInterface
 
       $table_cat      = getTableForItemType(PluginFormcreatorCategory::class);
       $table_form     = getTableForItemType(PluginFormcreatorForm::class);
-      $table_fp       = getTableForItemType(PluginFormcreatorForm_Profile::class);
       $table_section  = getTableForItemType(PluginFormcreatorSections::class);
       $table_question = getTableForItemType(PluginFormcreatorQuestions::class);
 
@@ -713,26 +756,24 @@ PluginFormcreatorTranslatableInterface
       $result_forms = $DB->request($where_form);
 
       $formList = [];
-      if ($result_forms->count() > 0) {
-         foreach ($result_forms as $form) {
-            // load thanguage for the form, if any
-            $domain = self::getTranslationDomain($form['id']);
-            $phpfile = self::getTranslationFile($form['id'], $_SESSION['glpilanguage']);
-            if (file_exists($phpfile)) {
-               $TRANSLATE->addTranslationFile('phparray', $phpfile, $domain, $_SESSION['glpilanguage']);
-            }
-            $formList[] = [
-               'id'               => $form['id'],
-               'name'             => __($form['name'], $domain),
-               'icon'             => $form['icon'],
-               'icon_color'       => $form['icon_color'],
-               'background_color' => $form['background_color'],
-               'description'      => __($form['description'], $domain),
-               'type'             => 'form',
-               'usage_count'      => $form['usage_count'],
-               'is_default'       => $form['is_default'] ? "true" : "false"
-            ];
+      foreach ($result_forms as $form) {
+         // load thanguage for the form, if any
+         $domain = self::getTranslationDomain($form['id']);
+         $phpfile = self::getTranslationFile($form['id'], $_SESSION['glpilanguage']);
+         if (file_exists($phpfile)) {
+            $TRANSLATE->addTranslationFile('phparray', $phpfile, $domain, $_SESSION['glpilanguage']);
          }
+         $formList[] = [
+            'id'               => $form['id'],
+            'name'             => __($form['name'], $domain),
+            'icon'             => $form['icon'],
+            'icon_color'       => $form['icon_color'],
+            'background_color' => $form['background_color'],
+            'description'      => __($form['description'], $domain),
+            'type'             => 'form',
+            'usage_count'      => $form['usage_count'],
+            'is_default'       => $form['is_default'] ? "true" : "false"
+         ];
       }
 
       if (PluginFormcreatorEntityConfig::getUsedConfig('is_kb_separated', Session::getActiveEntity()) != PluginFormcreatorEntityconfig::CONFIG_KB_DISTINCT
@@ -759,25 +800,23 @@ PluginFormcreatorTranslatableInterface
          $query_faqs = KnowbaseItem::getListRequest($params);
 
          $result_faqs = $DB->request($query_faqs);
-         if ($result_faqs->count() > 0) {
-            foreach ($result_faqs as $faq) {
-               $formList[] = [
-                  'id'               => $faq['id'],
-                  'name'             => $faq['name'],
-                  'icon'             => '',
-                  'icon_color'       => '',
-                  'background_color' => '',
-                  'description'      => '',
-                  'type'             => 'faq',
-                  'usage_count'      => $faq['view'],
-                  'is_default'       => false
-               ];
-            }
+         foreach ($result_faqs as $faq) {
+            $formList[] = [
+               'id'               => $faq['id'],
+               'name'             => $faq['name'],
+               'icon'             => '',
+               'icon_color'       => '',
+               'background_color' => '',
+               'description'      => '',
+               'type'             => 'faq',
+               'usage_count'      => $faq['view'],
+               'is_default'       => false
+            ];
          }
       }
 
-      if (count($formList) == 0) {
-         $defaultForms = true;
+      $defaultForms = (count($formList) == 0);
+      if ($defaultForms) {
          // No form nor FAQ have been selected
          // Fallback to default forms
          $query_forms = self::getFormListQuery();
@@ -790,23 +829,19 @@ PluginFormcreatorTranslatableInterface
          ];
          $result_forms = $DB->request($query_forms);
 
-         if ($result_forms->count() > 0) {
-            foreach ($result_forms as $form) {
-               $formList[] = [
-                  'id'           => $form['id'],
-                  'name'         => $form['name'],
-                  'icon'         => $form['icon'],
-                  'icon_color'   => $form['icon_color'],
-                  'background_color'   => $form['background_color'],
-                  'description'  => $form['description'],
-                  'type'         => 'form',
-                  'usage_count'  => $form['usage_count'],
-                  'is_default'   => true
-               ];
-            }
+         foreach ($result_forms as $form) {
+            $formList[] = [
+               'id'               => $form['id'],
+               'name'             => $form['name'],
+               'icon'             => $form['icon'],
+               'icon_color'       => $form['icon_color'],
+               'background_color' => $form['background_color'],
+               'description'      => $form['description'],
+               'type'             => 'form',
+               'usage_count'      => $form['usage_count'],
+               'is_default'       => true,
+            ];
          }
-      } else {
-         $defaultForms = false;
       }
       return ['default' => $defaultForms, 'forms' => $formList];
    }
@@ -1063,10 +1098,18 @@ PluginFormcreatorTranslatableInterface
    public function prepareInputForUpdate($input) {
       if (isset($input['toggle'])) {
          // Enable / disable form
-         return [
-            'id' => $input['id'],
-            'is_active' => $this->fields['is_active'] == '0' ? '1' : '0',
-         ];
+         if ($input['toggle'] == 'active') {
+            return [
+               'id' => $input['id'],
+               'is_active' => $this->fields['is_active'] == '0' ? '1' : '0',
+            ];
+         }
+         if ($input['toggle'] == 'default') {
+            return [
+               'id' => $input['id'],
+               'is_default' => $this->fields['is_default'] == '0' ? '1' : '0',
+            ];
+         }
       }
 
       if (isset($input['usage_count'])) {
@@ -2411,6 +2454,8 @@ PluginFormcreatorTranslatableInterface
     * @return boolean true if the user can use the form
     */
    public function canViewForRequest(): bool {
+      global $PLUGIN_HOOKS;
+
       if ($this->isNewItem()) {
          return false;
       }
@@ -2437,6 +2482,19 @@ PluginFormcreatorTranslatableInterface
          return false;
       }
 
+      // Check plugins restrictions
+      foreach ($PLUGIN_HOOKS['formcreator_restrict_form'] as $plugin => $callable) {
+         // Skip if invalid hook
+         if (!is_callable($callable)) {
+            trigger_error("formcreator_restrict_form[$plugin]: not a callable", E_USER_WARNING);
+            continue;
+         }
+
+         if (!call_user_func($callable, $this)) {
+            return false;
+         }
+      }
+
       // All checks were succesful, display form
       return true;
    }
@@ -2453,6 +2511,8 @@ PluginFormcreatorTranslatableInterface
     * get the SQL joins and conditions to select the forms available for the current user
     */
    public static function getFormListQuery() {
+      global $PLUGIN_HOOKS;
+
       $dbUtils           = new DbUtils();
       $formTable         = getTableForItemType(PluginFormcreatorForm::class);
       $formLanguageTable = getTableForItemType(PluginFormcreatorForm_Language::class);
@@ -2484,7 +2544,8 @@ PluginFormcreatorTranslatableInterface
                      'access_rights' => ['!=', PluginFormcreatorForm::ACCESS_RESTRICTED],
                      PluginFormcreatorFormAccessType::getRestrictedFormListCriteria(),
                   ],
-               ]
+               ],
+               ...array_values($PLUGIN_HOOKS['formcreator_restrict_forms'] ?? [])
             ] + $entityRestrict,
          ],
       ];
