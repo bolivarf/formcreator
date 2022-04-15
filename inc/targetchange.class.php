@@ -55,11 +55,11 @@ class PluginFormcreatorTargetChange extends PluginFormcreatorAbstractItilTarget
       return new Change_Supplier();
    }
 
-   public function getItem_Item() {
+   public static function getItem_Item(): CommonDBRelation {
       return new Change_Item();
    }
 
-   public function getTargetItemtypeName(): string {
+   public static function getTargetItemtypeName(): string {
       return Change::class;
    }
 
@@ -723,6 +723,8 @@ class PluginFormcreatorTargetChange extends PluginFormcreatorAbstractItilTarget
       $data = $this->requesterGroups + $this->observerGroups + $this->assignedGroups + $data;
 
       $data = $this->prepareUploadedFiles($data, $formanswer);
+
+      $this->appendFieldsData($formanswer, $data);
 
       // Create the target change
       if (!$changeID = $change->add($data)) {

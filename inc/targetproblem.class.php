@@ -54,11 +54,11 @@ class PluginFormcreatorTargetProblem extends PluginFormcreatorAbstractItilTarget
       return new Problem_Supplier();
    }
 
-   public function getItem_Item() {
+   public static function getItem_Item(): CommonDBRelation {
       return new Item_Problem();
    }
 
-   public function getTargetItemtypeName(): string {
+   public static function getTargetItemtypeName(): string {
       return Problem::class;
    }
 
@@ -220,6 +220,8 @@ class PluginFormcreatorTargetProblem extends PluginFormcreatorAbstractItilTarget
       $data = $this->requesterGroups + $this->observerGroups + $this->assignedGroups + $data;
 
       $data = $this->prepareUploadedFiles($data, $formanswer);
+
+      $this->appendFieldsData($formanswer, $data);
 
       // Create the target problem
       if (!$problemID = $problem->add($data)) {

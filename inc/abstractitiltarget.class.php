@@ -96,9 +96,9 @@ PluginFormcreatorTranslatableInterface
     * Get an instance object for the relation between the target itemtype
     * and an object of any itemtype
     *
-    * @return CommonDBTM
+    * @return CommonDBRelation
     */
-   abstract public function getItem_Item();
+   abstract public static function getItem_Item(): CommonDBRelation;
 
    /**
     * Get the class name of the target itemtype's template class
@@ -1304,7 +1304,7 @@ SCRIPT;
       $validation_dropdown_params = [
          'name' => 'validation_specific'
       ];
-      $validation_data = json_decode($this->fields['commonitil_validation_question'], true);
+      $validation_data = json_decode($this->fields['commonitil_validation_question'] ?? '', true);
       if (isset($validation_data['type'])) {
          $validation_dropdown_params['users_id_validate'] = $validation_data['values'];
       }
@@ -1461,6 +1461,8 @@ SCRIPT;
                break;
             }
 
+            break;
+
          case self::COMMONITIL_VALIDATION_RULE_ANSWER_GROUP:
             $answers = $DB->request([
                'SELECT' => ['answer'],
@@ -1494,6 +1496,8 @@ SCRIPT;
                $data['users_id_validate'] = $values;
                break;
             }
+
+            break;
       }
 
       return $data;
@@ -2214,8 +2218,8 @@ SCRIPT;
 
       if ($saved_documents) {
          foreach ($formanswer->getFileFields() as $questionId) {
-            $data["_filename"] = array_merge($data["_filename"], $saved_documents["_filename"][$questionId]);
-            $data["_tag_filename"] = array_merge($data["_tag_filename"], $saved_documents["_tag_filename"][$questionId]);
+            $data["_filename"] = array_merge($data["_filename"], $saved_documents["_filename"][$questionId] ?? []);
+            $data["_tag_filename"] = array_merge($data["_tag_filename"], $saved_documents["_tag_filename"][$questionId] ?? []);
 
             foreach ($saved_documents["_filename"][$questionId] as $key => $filename) {
                $uploaded_filename = $formanswer->getFileName($questionId, $key);
@@ -2239,5 +2243,50 @@ SCRIPT;
       }
 
       return $data;
+   }
+
+   public static function getTargetType(): int {
+      return self::TARGET_TYPE_OBJECT;
+   }
+
+   /**
+    * Find generated targets for this target and the given form answer
+    *
+    * @param PluginFormcreatorFormAnswer $formAnswer
+    * @return array
+    */
+   public static function findForFormAnswer(PluginFormcreatorFormAnswer $formAnswer): array {
+      global $DB;
+
+      $targets = [];
+      $relationType = static::getItem_Item();
+      $relationTable = $relationType::getTable();
+      $generatedType = static::getTargetItemtypeName();
+      $generatedTypeTable = $generatedType::getTable();
+      $fk = $generatedType::getForeignKeyField();
+      $iterator = $DB->request([
+         'SELECT' => ["$generatedTypeTable.*"],
+         'FROM' => $generatedTypeTable,
+         'INNER JOIN' => [
+            $relationTable => [
+               'FKEY' => [
+                  $generatedTypeTable => 'id',
+                  $relationTable => $fk,
+               ],
+            ],
+         ],
+         'WHERE' => [
+            "$relationTable.itemtype" => PluginFormcreatorFormAnswer::getType(),
+            "$relationTable.items_id" => $formAnswer->getID(),
+         ],
+      ]);
+      foreach ($iterator as $row) {
+         /** @var $item CommonDBTM */
+         $item = new $generatedType();
+         $item->getFromResultSet($row);
+         $targets[] = $item;
+      }
+
+      return $targets;
    }
 }

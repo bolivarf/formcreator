@@ -677,17 +677,17 @@ JAVASCRIPT;
 
    public static function header() {
       switch (self::getInterface()) {
-         case "servicecatalog";
-         case "self-service";
+         case "servicecatalog":
+         case "self-service":
             return Html::helpHeader(__('Form list', 'formcreator'), $_SERVER['PHP_SELF']);
-         case "central";
+         case "central":
             return Html::header(
                __('Form Creator', 'formcreator'),
                $_SERVER['PHP_SELF'],
                'helpdesk',
                'PluginFormcreatorFormlist'
             );
-         case "public";
+         case "public":
          default:
             Html::nullHeader(__('Form Creator', 'formcreator'), $_SERVER['PHP_SELF']);
             Html::displayMessageAfterRedirect();
@@ -747,6 +747,8 @@ JAVASCRIPT;
    }
 
    public static function hookRedefineMenu($menus) {
+      global $DB;
+
       if (Session::getCurrentInterface() != 'helpdesk') {
          return $menus;
       }
@@ -756,7 +758,7 @@ JAVASCRIPT;
          $newMenu['seek_assistance'] = [
             'default' => Plugin::getWebDir('formcreator', false) . '/front/wizard.php',
             'title'   => __('Seek assistance', 'formcreator'),
-            'icon'    => 'fa-fw ti ti-send',
+            'icon'    => 'fa-fw ti ti-headset',
          ];
          $newMenu['my_assistance_requests'] = [
             'default' => PluginFormcreatorIssue::getSearchURL(false),
@@ -775,7 +777,19 @@ JAVASCRIPT;
                $newMenu['reservation'] = $menus['reservation'];
             }
          }
-         if (RSSFeed::canView()) {
+         $rssFeedTable = RSSFeed::getTable();
+         $criteria = [
+            'SELECT'   => "$rssFeedTable.*",
+            'DISTINCT' => true,
+            'FROM'     => $rssFeedTable,
+            'ORDER'    => "$rssFeedTable.name"
+         ];
+         $criteria = $criteria + RSSFeed::getVisibilityCriteria();
+         $criteria['WHERE']["$rssFeedTable.users_id"] = ['<>', Session::getLoginUserID()];
+         $iterator = $DB->request($criteria);
+         $hasRssFeeds = $iterator->count() > 0;
+
+         if (RSSFeed::canView() && $hasRssFeeds) {
             $newMenu['feeds'] = [
                'default' => Plugin::getWebDir('formcreator', false) . '/front/wizardfeeds.php',
                'title'   => __('Consult feeds', 'formcreator'),

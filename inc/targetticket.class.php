@@ -49,6 +49,8 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
    const REQUESTTYPE_SPECIFIC = 1;
    const REQUESTTYPE_ANSWER = 2;
 
+   const REQUESTSOURCE_NONE = 0;
+   const REQUESTSOURCE_SPECIFIC = 1;
 
    public static function getTypeName($nb = 1) {
       return _n('Target ticket', 'Target tickets', $nb, 'formcreator');
@@ -66,11 +68,11 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
       return new Supplier_Ticket();
    }
 
-   public function getItem_Item() {
+   public static function getItem_Item(): CommonDBRelation {
       return new Item_Ticket();
    }
 
-   public function getTargetItemtypeName(): string {
+   public static function getTargetItemtypeName(): string {
       return Ticket::class;
    }
 
@@ -97,6 +99,13 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
          self::ASSOCIATE_RULE_SPECIFIC    => __('Specific asset', 'formcreator'),
          self::ASSOCIATE_RULE_ANSWER      => __('Equals to the answer to the question', 'formcreator'),
          self::ASSOCIATE_RULE_LAST_ANSWER => __('Last valid answer', 'formcreator'),
+      ];
+   }
+
+   public static function getEnumRequestSourceRule(): array {
+      return [
+         self::REQUESTSOURCE_NONE      => __('Source from template or user default or GLPI default', 'formcreator'),
+         self::REQUESTSOURCE_SPECIFIC  => __('Formcreator', 'formcreator'),
       ];
    }
 
@@ -239,6 +248,7 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
       $item->showSLASettings();
       $item->showOLASettings();
 
+      $item->showSourceSettings($rand);
       $item->showTypeSettings($rand);
       // -------------------------------------------------------------------------------------------
       //  associated elements of the target
@@ -455,10 +465,10 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
             'fieldtype' => ['glpiselect'],
             'itemtype'  => [Ticket::class],
             'used'      => $excludedQuestionIds,
-            'display'   => false,
          ],
          '_link_plugin_formcreator_questions_id',
-         null
+         null,
+         ['display'   => false]
       );
       echo '</span>';
 
@@ -528,6 +538,13 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
          }
       }
 
+      if (!isset($input['source_rule'])) {
+         $input['source_rule'] = self::REQUESTSOURCE_SPECIFIC;
+      }
+      $input['source_question'] = 0;
+      if ($input['source_rule'] == self::REQUESTTYPE_SPECIFIC) {
+         $input['source_question'] = PluginFormcreatorCommon::getFormcreatorRequestTypeId();
+      }
       return $input;
    }
 
@@ -564,10 +581,10 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
 
          if (isset($input['urgency_rule'])) {
             switch ($input['urgency_rule']) {
-               case PluginFormcreatorAbstractTarget::URGENCY_RULE_ANSWER:
+               case self::URGENCY_RULE_ANSWER:
                   $input['urgency_question'] = $input['_urgency_question'];
                   break;
-               case PluginFormcreatorAbstractTarget::URGENCY_RULE_SPECIFIC:
+               case self::URGENCY_RULE_SPECIFIC:
                   $input['urgency_question'] = $input['_urgency_specific'];
                   break;
                default:
@@ -577,11 +594,11 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
 
          if (isset($input['sla_rule'])) {
             switch ($input['sla_rule']) {
-               case PluginFormcreatorAbstractTarget::SLA_RULE_SPECIFIC:
+               case self::SLA_RULE_SPECIFIC:
                   $input['sla_question_tto'] = $input['_sla_specific_tto'];
                   $input['sla_question_ttr'] = $input['_sla_specific_ttr'];
                   break;
-               case PluginFormcreatorAbstractTarget::SLA_RULE_FROM_ANWSER:
+               case self::SLA_RULE_FROM_ANWSER:
                   $input['sla_question_tto'] = $input['_sla_questions_tto'];
                   $input['sla_question_ttr'] = $input['_sla_questions_ttr'];
                   break;
@@ -590,11 +607,11 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
 
          if (isset($input['ola_rule'])) {
             switch ($input['ola_rule']) {
-               case PluginFormcreatorAbstractTarget::OLA_RULE_SPECIFIC:
+               case self::OLA_RULE_SPECIFIC:
                   $input['ola_question_tto'] = $input['_ola_specific_tto'];
                   $input['ola_question_ttr'] = $input['_ola_specific_ttr'];
                   break;
-               case PluginFormcreatorAbstractTarget::OLA_RULE_FROM_ANWSER:
+               case self::OLA_RULE_FROM_ANWSER:
                   $input['ola_question_tto'] = $input['_ola_questions_tto'];
                   $input['ola_question_ttr'] = $input['_ola_questions_ttr'];
                   break;
@@ -609,6 +626,18 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
                   break;
                case self::REQUESTTYPE_SPECIFIC:
                   $input['type_question'] = $input['_type_specific'];
+                  break;
+            }
+         }
+
+         if (isset($input['source_rule'])) {
+            $input['source_question'] = '0';
+            switch ($input['source_rule']) {
+               case self::REQUESTSOURCE_NONE:
+                  $input['source_question'] = 0;
+                  break;
+               case self::REQUESTSOURCE_SPECIFIC:
+                  $input['source_question'] = PluginFormcreatorCommon::getFormcreatorRequestTypeId();
                   break;
             }
          }
@@ -799,7 +828,6 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
       $ticket  = new Ticket();
       $form = $formanswer->getForm();
       $data = $this->getDefaultData($formanswer);
-      $data['requesttypes_id'] = $data['requesttypes_id'] ?? PluginFormcreatorCommon::getFormcreatorRequestTypeId();
 
       // Parse data
       // TODO: generate instances of all answers of the form and use them for the fullform computation
@@ -852,6 +880,7 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
       $data['users_id_lastupdater'] = $lastUpdater != '' ? $lastUpdater : 0;
 
       $data = $this->setTargetType($data, $formanswer);
+      $data = $this->setTargetSource($data, $formanswer);
       $data = $this->setTargetEntity($data, $formanswer, $requesters_id);
       $data = $this->setTargetDueDate($data, $formanswer);
       $data = $this->setSLA($data, $formanswer);
@@ -903,6 +932,8 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
       }
 
       $data = $this->prepareUploadedFiles($data, $formanswer);
+
+      $this->appendFieldsData($formanswer, $data);
 
       // Create the target ticket
       $data['_auto_import'] = true;
@@ -1033,6 +1064,16 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
       return $data;
    }
 
+   protected function setTargetSource(array $data, PluginFormcreatorFormAnswer $formanswer): array {
+      switch ($this->fields['source_rule']) {
+         case self::REQUESTSOURCE_SPECIFIC:
+            $data['requesttypes_id'] = $this->fields['source_question'];
+            break;
+      }
+
+      return $data;
+   }
+
    protected function setTargetType(array $data, PluginFormcreatorFormAnswer $formanswer) {
       global $DB;
 
@@ -1060,6 +1101,19 @@ class PluginFormcreatorTargetTicket extends PluginFormcreatorAbstractItilTarget
       }
 
       return $data;
+   }
+
+   protected function showSourceSettings($rand): void {
+      echo '<tr>';
+      echo '<td width="15%">' . __('Request source') . '</td>';
+      echo '<td width="25%">';
+      Dropdown::showFromArray('source_rule', static::getEnumRequestSourceRule(), [
+         'value' => $this->fields['source_rule'],
+         'rand' => $rand,
+      ]);
+      echo '<td></td><td></td>';
+      echo '</td>';
+      echo '</tr>';
    }
 
    protected  function showTypeSettings($rand) {

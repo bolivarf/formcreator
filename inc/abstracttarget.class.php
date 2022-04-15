@@ -67,7 +67,7 @@ abstract class PluginFormcreatorAbstractTarget extends CommonDBChild implements
     *
     * @return string
     */
-   abstract public function getTargetItemtypeName(): string;
+   abstract public static function getTargetItemtypeName(): string;
 
    /**
     * get fields containing tags for target generation
@@ -87,6 +87,9 @@ abstract class PluginFormcreatorAbstractTarget extends CommonDBChild implements
    const DESTINATION_ENTITY_SPECIFIC = 7;
    const DESTINATION_ENTITY_USER = 8;
    const DESTINATION_ENTITY_ENTITY = 9;
+
+   const TARGET_TYPE_OBJECT = 1;
+   const TARGET_TYPE_ACTION = 2;
 
    public static function getEnumDestinationEntity() {
       return [
@@ -200,6 +203,57 @@ abstract class PluginFormcreatorAbstractTarget extends CommonDBChild implements
 
       return $template;
    }
+
+   /**
+    * Append fields data to input
+    *
+    * @param PluginFormcreatorFormanswer $formanswer the source formanswer
+    * @param array $input data of the generated target
+    * @return void
+    */
+   protected function appendFieldsData(PluginFormcreatorFormanswer $formanswer, &$input): void {
+      global $DB;
+
+      //get all PluginFormcreatorAnswer
+      //from PluginFormcreatorFormanswer
+      //where linked PluginFormcreatorquestion have 'fields' type
+      $formAnswerFk = PluginFormcreatorFormAnswer::getForeignKeyField();
+      $result = $DB->request([
+         'SELECT' => ['plugin_formcreator_questions_id', 'answer'],
+         'FROM' => PluginFormcreatorAnswer::getTable(). ' AS answer',
+         'JOIN' => [
+            PluginFormcreatorQuestion::getTable() . ' AS question' => [
+               'ON' => [
+                  'answer' => 'plugin_formcreator_questions_id',
+                  'question' => 'id',
+               ]
+            ]
+         ],
+         'WHERE' => [
+            'answer.'.$formAnswerFk => (int) $formanswer->fields['id'],
+            'question.fieldtype' => 'fields'
+         ],
+      ]);
+
+      foreach ($result as $line) {
+         $formQuestion = PluginFormcreatorQuestion::getById($line['plugin_formcreator_questions_id']);
+         $decodedValues = json_decode($formQuestion->fields['values'], JSON_OBJECT_AS_ARRAY);
+         $field_name = $decodedValues['dropdown_fields_field'] ?? '';
+         $blocks_field = $decodedValues['blocks_field'] ?? '';
+
+         $field = new PluginFieldsField();
+         $field->getFromDbByCrit(['name' => $field_name]);
+
+         if ($field->fields['type'] == 'dropdown') {
+            $dropdownInputName = "plugin_fields_" . $field_name . "dropdowns_id" ?? '';
+            $input[$dropdownInputName] = $line['answer'];
+         } else {
+            $input[$field_name] = $line['answer'];
+         }
+         $input['c_id'] = $blocks_field;
+      }
+   }
+
 
       /**
     * Converts tags in template fields from ID to UUID.

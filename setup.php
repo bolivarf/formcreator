@@ -31,7 +31,7 @@
 
 global $CFG_GLPI;
 // Version of the plugin (major.minor.bugfix)
-define('PLUGIN_FORMCREATOR_VERSION', '2.13.0-alpha.3');
+define('PLUGIN_FORMCREATOR_VERSION', '2.13.0-alpha.4');
 // Schema version of this version (major.minor only)
 define('PLUGIN_FORMCREATOR_SCHEMA_VERSION', '2.13');
 // is or is not an official release of the plugin
@@ -355,10 +355,7 @@ function plugin_formcreator_hook() {
       return;
    }
 
-   // If user have acces to one form or more, add link
-   if (PluginFormcreatorForm::countAvailableForm() > 0) {
-      $PLUGIN_HOOKS['menu_toadd']['formcreator']['helpdesk'] = PluginFormcreatorFormlist::class;
-   }
+   $PLUGIN_HOOKS['menu_toadd']['formcreator']['helpdesk'] = PluginFormcreatorFormlist::class;
 
    // Massive Action definition
    $PLUGIN_HOOKS['use_massive_action']['formcreator'] = 1;
@@ -415,7 +412,7 @@ function plugin_formcreator_redirect() {
       }
    }
 
-   if (plugin_formcreator_replaceHelpdesk() === false) {
+   if (Session::getCurrentInterface() != 'helpdesk') {
       return;
    }
 

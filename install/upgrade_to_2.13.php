@@ -38,6 +38,8 @@ class PluginFormcreatorUpgradeTo2_13 {
    public function upgrade(Migration $migration) {
       $this->migration = $migration;
       $this->migrateEntityConfig();
+      $this->addDefaultFormListMode();
+      $this->addDashboardVisibility();
       $this->fixRootEntityConfig();
       $this->migrateFkToUnsignedInt();
       $this->addFormAnswerTitle();
@@ -45,7 +47,7 @@ class PluginFormcreatorUpgradeTo2_13 {
       $this->migrateItemtypeInQuestion();
       $this->addTargetValidationSetting();
       $this->addFormVisibility();
-      $this->addDashboardVisibility();
+      $this->addRequestSourceSetting();
    }
 
    public function addFormAnswerTitle() {
@@ -134,7 +136,7 @@ class PluginFormcreatorUpgradeTo2_13 {
       $table = 'glpi_plugin_formcreator_entityconfigs';
       $this->migration->addField($table, 'is_dashboard_visible', 'integer', ['after' => 'is_search_visible', 'value' => '-2']);
 
-      $this->migration->addPostQuery("UPDATE `glpi_plugin_formcreator_entityconfigs` SET `is_dashboard_visible`=1 WHERE `id`=0");
+      $this->migration->addPostQuery("UPDATE `glpi_plugin_formcreator_entityconfigs` SET `is_dashboard_visible`=1 WHERE `entities_id`=0");
    }
 
    protected function migrateEntityConfig() {
@@ -149,8 +151,8 @@ class PluginFormcreatorUpgradeTo2_13 {
 
       $this->migration->addField($table, 'entities_id', 'int unsigned not null default 0', ['after' => 'id']);
       $this->migration->migrationOneTable($table);
-      $this->migration->addKey($table, 'entities_id', 'unicity', 'UNIQUE');
       $DB->queryOrDie("UPDATE `$table` SET `entities_id`=`id`");
+      $this->migration->addKey($table, 'entities_id', 'unicity', 'UNIQUE');
    }
 
    /**
@@ -158,12 +160,13 @@ class PluginFormcreatorUpgradeTo2_13 {
     *
     * @return void
     */
-   private function fixRootEntityConfig() {
+   private function fixRootEntityConfig(): void {
       global $DB;
 
       $table = 'glpi_plugin_formcreator_entityconfigs';
       $DB->update($table, [
          'replace_helpdesk' => new QueryExpression("IF(`replace_helpdesk` = -2, 0, `replace_helpdesk`)"),
+         'default_form_list_mode' => new QueryExpression("IF(`default_form_list_mode` = -2, 0, `default_form_list_mode`)"),
          'sort_order' => new QueryExpression("IF(`sort_order` = -2, 0, `sort_order`)"),
          'is_kb_separated' => new QueryExpression("IF(`is_kb_separated` = -2, 0, `is_kb_separated`)"),
          'is_search_visible' => new QueryExpression("IF(`is_search_visible` = -2, 1, `is_search_visible`)"),
@@ -273,5 +276,28 @@ class PluginFormcreatorUpgradeTo2_13 {
          }
       }
       $this->migration->changeField($table, 'id', 'id', 'int ' . DBConnection::getDefaultPrimaryKeySignOption() . ' not null auto_increment');
+   }
+
+   public function addRequestSourceSetting(): void {
+      global $DB;
+
+      $table = 'glpi_plugin_formcreator_targettickets';
+
+      if (!$DB->fieldExists($table, 'source_rule')) {
+         $this->migration->addField($table, 'source_rule', 'integer', ['after' => 'target_name']);
+         $this->migration->addField($table, 'source_question', 'integer', ['after' => 'source_rule']);
+         $this->migration->migrationOneTable($table);
+         $formcreatorSourceId = PluginFormcreatorCommon::getFormcreatorRequestTypeId();
+         $DB->queryOrDie("UPDATE `$table` SET `source_rule` = '1', `source_question` = '$formcreatorSourceId'");
+      }
+   }
+
+   public function addDefaultFormListMode() {
+      $table = 'glpi_plugin_formcreator_entityconfigs';
+
+      $this->migration->addField($table, 'default_form_list_mode', 'int not null default -2', ['after' => 'replace_helpdesk']);
+      $this->migration->migrationOneTable($table);
+
+      $this->migration->addPostQuery("UPDATE `glpi_plugin_formcreator_entityconfigs` SET `default_form_list_mode`=0 WHERE `entities_id`=0");
    }
 }

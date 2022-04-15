@@ -20,13 +20,17 @@ init_databases() {
 install_glpi() {
    echo Installing GLPI
    rm -rf ../glpi
-   git clone --depth=35 $GLPI_SOURCE -b $GLPI_BRANCH ../glpi && cd ../glpi
-   composer install --no-dev --no-interaction
-   php bin/console dependencies install composer-options=--no-dev
-   php bin/console locales:compile
-   php bin/console glpi:build:compile_scss
-   php bin/console glpi:system:check_requirements
-   rm .atoum.php
+   # git clone --depth=35 $GLPI_SOURCE -b $GLPI_BRANCH ../glpi
+   # cd ../glpi
+   # composer install --no-dev --no-interaction
+   # php bin/console dependencies install composer-options=--no-dev
+   # php bin/console locales:compile
+   # php bin/console glpi:build:compile_scss
+   # php bin/console glpi:system:check_requirements
+   # rm .atoum.php
+   curl $GLPI_PACKAGE_URL --output /tmp/glpi.tar.gz
+   tar xf /tmp/glpi.tar.gz --directory ../
+   cd ../glpi
    mkdir -p tests/files/_cache
    cp -r ../$PLUGINNAME plugins/$PLUGINNAME
 }
@@ -47,7 +51,6 @@ init_glpi() {
    mkdir -p ../../$TEST_GLPI_CONFIG_DIR
    mysql -u$2 -p$3 -h$DB_HOST --execute "CREATE DATABASE \`$1\`;"
    php ../../bin/console glpi:database:install --db-host=$DB_HOST --db-user=$2 --db-password=$3 --db-name=$1 --config-dir=../../$TEST_GLPI_CONFIG_DIR --no-interaction --no-plugins --force
-
 }
 
 # Plugin upgrade test
@@ -71,8 +74,6 @@ plugin_test() {
 
 plugin_test_functional() {
    if [ "$SKIP_FUNCTIONAL_TESTS" = "true" ]; then echo "skipping functional tests"; return; fi
-   # symfony requires PHP 7.2+, but the project is still compatible with older versions
-   composer global require --dev symfony/panther
    RESOURCE="tests/4-functional"
    if [ "$1" != "" ]; then
       RESOURCE=$1

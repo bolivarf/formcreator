@@ -639,7 +639,8 @@ PluginFormcreatorTranslatableInterface
    public function showWizard() : void {
       echo '<div id="plugin_formcreator_wizard_categories" class="card">';
       echo '<div><h2 class="card-title">'._n("Category", "Categories", 2, 'formcreator').'</h2></div>';
-      echo '<div><a href="#" id="wizard_seeall"><i class="fas fa-home"></i></a></div>';
+      echo '<div class="slinky-menu"></div>';
+      echo '<div><a href="#" id="wizard_seeall">' . __('See all', 'formcreator') . '</a></div>';
       echo '</div>';
 
       echo '<div id="plugin_formcreator_wizard_right" class="card">';
@@ -655,25 +656,28 @@ PluginFormcreatorTranslatableInterface
          $this->showSearchBar();
          echo '</div>';
       }
-      $sortSettings = PluginFormcreatorEntityConfig::getEnumSort();
+      $sort_settings = PluginFormcreatorEntityConfig::getEnumSort();
       echo '<div class="plugin_formcreator_sort">';
       echo '<span class="radios">';
-      $sortOrder = PluginFormcreatorEntityconfig::getUsedConfig('sort_order', Session::getActiveEntity());
-      $selected = $sortOrder == PluginFormcreatorEntityconfig::CONFIG_SORT_POPULARITY ? 'checked="checked"' : '';
+      $sort_order = PluginFormcreatorEntityconfig::getUsedConfig('sort_order', Session::getActiveEntity());
+      $selected = $sort_order == PluginFormcreatorEntityconfig::CONFIG_SORT_POPULARITY ? 'checked="checked"' : '';
       echo '<input type="radio" class="-check-input" id="plugin_formcreator_mostPopular" name="sort" value="mostPopularSort" '.$selected.' onclick="showTiles(tiles)"/>';
-      echo '<label for="plugin_formcreator_mostPopular">&nbsp;'.$sortSettings[PluginFormcreatorEntityConfig::CONFIG_SORT_POPULARITY] .'</label>';
+      echo '<label for="plugin_formcreator_mostPopular">&nbsp;'.$sort_settings[PluginFormcreatorEntityConfig::CONFIG_SORT_POPULARITY] .'</label>';
       echo '</span>';
       echo '&nbsp;';
       echo '<span class="radios">';
-      $selected = $sortOrder == PluginFormcreatorEntityconfig::CONFIG_SORT_ALPHABETICAL ? 'checked="checked"' : '';
+      $selected = $sort_order == PluginFormcreatorEntityconfig::CONFIG_SORT_ALPHABETICAL ? 'checked="checked"' : '';
       echo '<input type="radio" class="-check-input" id="plugin_formcreator_alphabetic" name="sort" value="alphabeticSort" '.$selected.' onclick="showTiles(tiles)"/>';
-      echo '<label for="plugin_formcreator_alphabetic">&nbsp;'.$sortSettings[PluginFormcreatorEntityConfig::CONFIG_SORT_ALPHABETICAL].'</label>';
+      echo '<label for="plugin_formcreator_alphabetic">&nbsp;'.$sort_settings[PluginFormcreatorEntityConfig::CONFIG_SORT_ALPHABETICAL].'</label>';
       echo '</span>';
       echo '</div>';
       echo '<div id="plugin_formcreator_wizard_forms">';
       echo '</div>';
       echo '</div>';
       echo '</div>';
+      echo Html::scriptblock("$(function() {
+         plugin_formcreator.updateWizardFormsView();
+      });");
    }
 
    /**
@@ -683,7 +687,7 @@ PluginFormcreatorTranslatableInterface
     * @param bool $helpdeskHome show items for helpdesk only
     * @return array
     */
-   public function showFormList(int $rootCategory = 0, string $keywords = '', bool $helpdeskHome = false) : array {
+   public static function getFormList(int $rootCategory = 0, string $keywords = '', bool $helpdeskHome = false): array {
       global $DB, $TRANSLATE;
 
       $table_cat      = getTableForItemType(PluginFormcreatorCategory::class);
@@ -723,8 +727,15 @@ PluginFormcreatorTranslatableInterface
 
       $selectedCategories = [];
       if ($rootCategory != 0) {
+         // The user choosed a category
          $selectedCategories = getSonsOf($table_cat, $rootCategory);
          $where_form['WHERE']['AND']["$table_form.$categoryFk"] = $selectedCategories;
+      } else {
+         // Searching for all forms without category restriction
+         $onlyDefault = PluginFormcreatorEntityconfig::getUsedConfig('default_form_list_mode', Session::getActiveEntity());
+         if ($onlyDefault == PluginFormcreatorEntityconfig::CONFIG_DEFAULT_FORM_LIST_DEFAULT) {
+            $where_form['WHERE']['is_default'] = 1;
+         }
       }
 
       $where_form['GROUPBY'] = [
@@ -981,12 +992,15 @@ PluginFormcreatorTranslatableInterface
       if (!isset($_SESSION['formcreator']['data'])) {
          $_SESSION['formcreator']['data'] = [];
       }
+      $formanswer = new PluginFormcreatorFormAnswer();
+      $formanswer->loadAnswersFromSession();
       TemplateRenderer::getInstance()->display('@formcreator/pages/userform.html.twig', [
          'item'    => $this,
          'options' => [
             'columns' => PluginFormcreatorSection::COLUMNS,
             'domain'  => $domain, // For translation
             'public'  => isset($_SESSION['formcreator_public']),
+            'formanswer' => $formanswer,
             'use_captcha' => ($this->fields['access_rights'] == PluginFormcreatorForm::ACCESS_PUBLIC
                               && $this->fields['is_captcha_enabled'] != '0'),
          ]
@@ -2483,15 +2497,17 @@ PluginFormcreatorTranslatableInterface
       }
 
       // Check plugins restrictions
-      foreach ($PLUGIN_HOOKS['formcreator_restrict_form'] as $plugin => $callable) {
-         // Skip if invalid hook
-         if (!is_callable($callable)) {
-            trigger_error("formcreator_restrict_form[$plugin]: not a callable", E_USER_WARNING);
-            continue;
-         }
+      if (isset($PLUGIN_HOOKS['formcreator_restrict_form'])) {
+         foreach ($PLUGIN_HOOKS['formcreator_restrict_form'] as $plugin => $callable) {
+            // Skip if invalid hook
+            if (!is_callable($callable)) {
+               trigger_error("formcreator_restrict_form[$plugin]: not a callable", E_USER_WARNING);
+               continue;
+            }
 
-         if (!call_user_func($callable, $this)) {
-            return false;
+            if (!call_user_func($callable, $this)) {
+               return false;
+            }
          }
       }
 
